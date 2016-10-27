@@ -337,13 +337,13 @@ static ssize_t store_boost_count(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1)
+	if ((ret != 1))
 		return -EINVAL;
 
-	if (input >= 5)
+	if ((input >= 5))
 		input = 5;
 
-	if (input = 0)
+	if ((input = 0))
 		input = 0;
 
 	cs_tuners->boost_count = input;
