@@ -6,6 +6,26 @@
 
 static char new_command_line[COMMAND_LINE_SIZE];
 
+// Function borrowed from 
+// http://www.linuxquestions.org/questions/programming-9/replace-a-substring-with-another-string-in-c-170076/#post877511
+
+char *replace_str(char *str, char *orig, char *rep)
+{
+  static char buffer[4096];
+  char *p;
+
+  if(!(p = strstr(str, orig)))  // Is 'orig' even in 'str'?
+    return str;
+
+  strncpy(buffer, str, p-str); // Copy characters from 'str' start to 'orig' st$
+  buffer[p-str] = '\0';
+
+  sprintf(buffer+(p-str), "%s%s", rep, p+strlen(orig));
+
+  return buffer;
+}
+
+
 static int cmdline_proc_show(struct seq_file *m, void *v)
 {
 	seq_printf(m, "%s\n", new_command_line);
@@ -26,28 +46,14 @@ static const struct file_operations cmdline_proc_fops = {
 
 static int __init proc_cmdline_init(void)
 {
-	char *offset_addr, *cmd = new_command_line;
+	char *cmd = new_command_line;
 
 	strcpy(cmd, saved_command_line);
-
-	/*
-	 * Remove 'androidboot.verifiedbootstate' flag from command line seen
-	 * by userspace in order to pass SafetyNet CTS check.
-	 */
-	offset_addr = strstr(cmd, "androidboot.verifiedbootstate=");
-	if (offset_addr) {
-		size_t i, len, offset;
-
-		len = strlen(cmd);
-		offset = offset_addr - cmd;
-
-		for (i = 1; i < (len - offset); i++) {
-			if (cmd[offset + i] == ' ')
-				break;
-		}
-
-		memmove(offset_addr, &cmd[offset + i + 1], len - i - offset);
-	}
+	
+	// Try to spoof some cmdline values here.
+	strcpy(cmd, replace_str(cmd, "androidboot.flash.locked=0", "androidboot.flash.locked=1"));
+	strcpy(cmd, replace_str(cmd, "androidboot.write_protect=0", "androidboot.write_protect=1"));
+	strcpy(cmd, replace_str(cmd, "androidboot.bl_state=2", "androidboot.bl_state=1"));
 
 	proc_create("cmdline", 0, NULL, &cmdline_proc_fops);
 	return 0;
